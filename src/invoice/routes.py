@@ -129,7 +129,7 @@ async def stripe_webhook(request: Request, session: AsyncSession = Depends(get_s
         await invoice_service.update_invoice(invoice, {"paid_at": paid_datetime}, session)
 
         # Update booking status to "confirmed"
-        booking_uid = invoice.booking_id
+        booking_uid = invoice.booking_uid
         booking = await booking_service.get_booking(booking_uid,session)
         await booking_service.quick_update_booking(booking, {"status": "confirmed"}, session)
         
