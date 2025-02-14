@@ -118,7 +118,7 @@ async def login_user(login_data:UserLoginModel, session: AsyncSession = Depends(
 		if password_valid:
 			access_token = create_access_token(
 				user_data={
-					"fist_name": user.first_name,
+					"first_name": user.first_name,
 					"last_name": user.last_name,
 					"is_verified": user.is_verified,
 					"user_uid": str(user.uid),
