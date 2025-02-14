@@ -122,8 +122,8 @@ async def stripe_webhook(request: Request, session: AsyncSession = Depends(get_s
             raise HTTPException(status_code=404, detail="Invoice not found in database")
 
         # Update invoice status
-        paid_timestamp = invoice_data["status_transitions"]["paid_at"]
-        paid_datetime = datetime.fromtimestamp(paid_timestamp, tz=timezone.utc) if paid_timestamp else None
+        paid_at_timestamp = invoice_data["status_transitions"]["paid_at"]
+        paid_datetime = datetime.utcfromtimestamp(paid_at_timestamp)        
         invoice_status = "paid"
         await invoice_service.update_invoice(invoice, {"status": invoice_status}, session)
         await invoice_service.update_invoice(invoice, {"paid_at": paid_datetime}, session)
