@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 import uuid
 from datetime import datetime,date
-from typing import Optional
+from typing import Optional, List
 
 
 
@@ -15,6 +15,7 @@ class Bookings(BaseModel):
 	dropoff_address : str
 	moving_date: date
 	service : str
+	sub_services: List[str]	
 	description : str
 	status : str
 	agreedPrice: str
@@ -32,6 +33,7 @@ class CreateBooking(BaseModel):
 	dropoff_address : str
 	moving_date: str
 	service : str
+	sub_services: List[str]	
 	description : str
 
 

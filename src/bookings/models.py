@@ -1,8 +1,9 @@
 from sqlmodel import SQLModel,Field,Column
 import sqlalchemy.dialects.postgresql as pg
+from sqlalchemy import JSON
 from datetime import datetime
 import uuid
-from typing import Optional
+from typing import Optional, List
 
 
 class Bookings(SQLModel, table=True):
@@ -25,6 +26,7 @@ class Bookings(SQLModel, table=True):
 	moving_date: datetime = Field(Column(pg.TIMESTAMP))
 	description : str
 	service : str
+	sub_services: List[str] = Field(sa_column=Column(JSON)) 
 	user_uid : Optional[uuid.UUID] = Field(default=None, foreign_key="users.uid",  nullable=True, ondelete="SET NULL")
 	status : Optional[str] = "Pending"
 	agreedPrice: Optional[str] = "0"
