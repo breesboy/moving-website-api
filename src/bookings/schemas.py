@@ -16,7 +16,7 @@ class Bookings(BaseModel):
 	location : Optional[str] = None
 	moving_date: datetime
 	service : str
-	sub_services: List[str]	= None
+	sub_services: Optional[List[str]]	= None
 	description : str
 	status : str
 	agreedPrice: str
@@ -35,7 +35,7 @@ class CreateBooking(BaseModel):
 	location : Optional[str] = None
 	moving_date: str
 	service : str
-	sub_services: List[str]	
+	sub_services: Optional[List[str]]	= None
 	description : str
 
 
