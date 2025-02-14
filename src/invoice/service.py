@@ -22,7 +22,7 @@ class InvoiceService:
         return invoices
             
     async def get_invoice_by_id(self, invoice_id: str, session: AsyncSession):
-        query = select(Invoice).where(Invoice.id == invoice_id)
+        query = select(Invoice).where(Invoice.stripe_invoice_id == invoice_id)
         result = await session.execute(query)
         invoice = result.scalar_one_or_none()
         return invoice
