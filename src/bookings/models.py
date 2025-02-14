@@ -22,7 +22,8 @@ class Bookings(SQLModel, table=True):
 	email : str
 	phoneNumber : str
 	pickup_address : Optional[str]
-	dropoff_address : str
+	dropoff_address : Optional[str]
+	location : Optional[str]
 	moving_date: datetime = Field(Column(pg.TIMESTAMP))
 	description : str
 	service : str
