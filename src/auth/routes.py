@@ -146,7 +146,7 @@ async def login_user(login_data:UserLoginModel, session: AsyncSession = Depends(
 					"refresh_token": refresh_token,
 					"user":{
 						"user_uid": str(user.uid),
-						"fist_name": user.first_name,
+						"first_name": user.first_name,
 						"last_name": user.last_name,
 						"is_verified": user.is_verified,
 						"username": user.username,
