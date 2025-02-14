@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List
 from fastapi import APIRouter, Depends, status, Request
 from fastapi.exceptions import HTTPException
@@ -121,10 +122,11 @@ async def stripe_webhook(request: Request, session: AsyncSession = Depends(get_s
             raise HTTPException(status_code=404, detail="Invoice not found in database")
 
         # Update invoice status
+        paid_timestamp = invoice_data["status_transitions"]["paid_at"]
+        paid_datetime = datetime.datetime.utcfromtimestamp(paid_timestamp) if paid_timestamp else None
         invoice_status = "paid"
-        invoice_paid_at = invoice_data["status_transitions"]["paid_at"]
         await invoice_service.update_invoice(invoice, {"status": invoice_status}, session)
-        await invoice_service.update_invoice(invoice, {"paid_at": invoice_paid_at}, session)
+        await invoice_service.update_invoice(invoice, {"paid_at": paid_datetime}, session)
 
         # Update booking status to "confirmed"
         booking_uid = invoice.booking_id
