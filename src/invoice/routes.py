@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 from fastapi import APIRouter, Depends, status, Request
 from fastapi.exceptions import HTTPException
@@ -123,7 +123,7 @@ async def stripe_webhook(request: Request, session: AsyncSession = Depends(get_s
 
         # Update invoice status
         paid_timestamp = invoice_data["status_transitions"]["paid_at"]
-        paid_datetime = datetime.datetime.utcfromtimestamp(paid_timestamp) if paid_timestamp else None
+        paid_datetime = datetime.fromtimestamp(paid_timestamp, tz=timezone.utc) if paid_timestamp else None
         invoice_status = "paid"
         await invoice_service.update_invoice(invoice, {"status": invoice_status}, session)
         await invoice_service.update_invoice(invoice, {"paid_at": paid_datetime}, session)
