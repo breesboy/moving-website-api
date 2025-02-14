@@ -18,6 +18,7 @@ class BookingService:
 
 		session.add(new_booking)
 
+
 		await session.commit()
 
 		return new_booking
