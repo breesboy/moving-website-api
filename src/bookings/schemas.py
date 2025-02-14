@@ -11,12 +11,12 @@ class Bookings(BaseModel):
 	lastName : str
 	email : str
 	phoneNumber : str
-	pickup_address : Optional[str]
-	dropoff_address : Optional[str]
-	location : Optional[str]
+	pickup_address : Optional[str] = None
+	dropoff_address : Optional[str] = None
+	location : Optional[str] = None
 	moving_date: datetime
 	service : str
-	sub_services: List[str]	
+	sub_services: List[str]	= None
 	description : str
 	status : str
 	agreedPrice: str
