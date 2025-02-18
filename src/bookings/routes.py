@@ -7,6 +7,8 @@ from src.bookings.schemas import Bookings, UpdateBooking,CreateBooking,UpdateBoo
 from src.db.main import get_session
 from .service import BookingService
 from src.auth.dependencies import AccessTokenBearer, RoleChecker
+from src.mail import mail, create_message
+
 
 
 booking_router = APIRouter()
@@ -21,6 +23,18 @@ admin_role_checker = RoleChecker(['admin'])
 @booking_router.post("/new_booking", status_code=status.HTTP_201_CREATED, response_model=Bookings)
 async def create_new_booking(booking_data: CreateBooking, session:AsyncSession = Depends(get_session),) -> dict:
 	new_booking = await booking_service.create_new_booking(booking_data,session)
+
+	email = new_booking.email
+	names = new_booking.firstName + " " + booking_data.lastName
+	booking_uid = new_booking.uid
+	link = ""
+	message = create_message(
+        recipients=[email],
+        subject="Booking Confirmation",
+        template_name="verify-email.html",
+        context={"names": names, "booking-id": booking_uid, "link" : link},
+    )
+	await mail.send_message(message, template_name="booking-email.html")
 
 	return new_booking
 

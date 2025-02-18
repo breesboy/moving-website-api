@@ -84,8 +84,10 @@ async def create_invoice(invoice_data: InvoiceRequestModel, session: AsyncSessio
     except stripe.error.InvalidRequestError:
         raise HTTPException(status_code=500, detail="Failed to send invoice immediately. Check Stripe dashboard.")
 
+    booking = await booking_service.get_booking(booking_uid,session)
+    await booking_service.quick_update_booking(booking, {"status": "invoiced"}, session)
+
     # Save Invoice Details to Database
-    
     await invoice_service.create_invoice(session, booking_uid, stripe_invoice.id, invoice_data)
 
     return {

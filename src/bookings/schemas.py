@@ -21,8 +21,8 @@ class Bookings(BaseModel):
 	status : str
 	agreedPrice: str
 	user_uid : Optional[uuid.UUID]
-	created_at : datetime
 	updated_at : datetime
+	created_at : datetime
 
 
 class CreateBooking(BaseModel):
@@ -35,6 +35,7 @@ class CreateBooking(BaseModel):
 	location : Optional[str] = None
 	moving_date: str
 	service : str
+	user_uid : Optional[uuid.UUID] = None
 	sub_services: Optional[List[str]]	= None
 	description : str
 
@@ -52,7 +53,7 @@ class UpdateBooking(BaseModel):
 
 
 class RescheduleBooking(BaseModel):
-	moving_date: date
+	moving_date: str
 
 
 class UpdateBookingStatus(BaseModel):

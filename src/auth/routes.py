@@ -1,4 +1,6 @@
 from fastapi import APIRouter,Depends,status
+
+from src.bookings.service import BookingService
 from .schemas import UserCreateModel, UserModel, UserLoginModel, CurrentUser, EmailModel, PasswordResetRequestModel, PasswordResetConfirmModel
 from .services import UserService
 from src.db.main import get_session
@@ -16,6 +18,7 @@ from src.config import Config
 
 auth_router = APIRouter()
 user_service = UserService()
+booking_service = BookingService()
 
 user_role_checker = RoleChecker(['admin','user'])
 admin_role_checker = RoleChecker(['admin'])
@@ -94,6 +97,9 @@ async def verify_email(token:str, session: AsyncSession = Depends(get_session)):
 		
 		await user_service.update_user(user, {"is_verified": True}, session)
 
+		user_uid = user.uid
+
+		await booking_service.link_booking_to_user(user_uid,user_email, session)
 
 		return JSONResponse(content={
 			"message":"Email verified successfully"},

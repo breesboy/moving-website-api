@@ -1,3 +1,4 @@
+from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
 from .schemas import CreateBooking,UpdateBooking,RescheduleBooking,UpdateBookingStatus,AddPayment
 from sqlmodel import select,desc
@@ -74,6 +75,8 @@ class BookingService:
 		for k, v in booking_reschedule_dict.items():
 			setattr(booking_to_reschedule,k,v)
 
+		booking_to_reschedule.moving_date = datetime.strptime(booking_reschedule_dict['moving_date'],"%Y-%m-%d %H:%M")
+
 		await session.commit()
 
 		return booking_to_reschedule
@@ -136,6 +139,20 @@ class BookingService:
 
 		await session.commit()
 		return booking
+
+	async def link_booking_to_user(self, user_uid:UUID,user_email:str, session: AsyncSession):
+		statement = select(Bookings).where(Bookings.email == user_email)
+
+		result = await session.exec(statement)
+		bookings = result.all()  
+
+		if bookings:
+			for booking in bookings:
+				booking.user_uid = user_uid
+
+			await session.commit()
+		return bookings
+
 
 
 
