@@ -2,8 +2,13 @@ from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
 from .schemas import CreateBooking,UpdateBooking,RescheduleBooking,UpdateBookingStatus,AddPayment
 from sqlmodel import select,desc
+from sqlalchemy import func,cast,Numeric
 from .models import Bookings
-from datetime import datetime
+from datetime import datetime, timedelta
+
+from src.auth.services import UserService
+
+user_service = UserService()
 
 
 class BookingService:
@@ -16,6 +21,12 @@ class BookingService:
 
 		new_booking.moving_date = datetime.strptime(bookings_data_dict['moving_date'],"%Y-%m-%d %H:%M")
 		new_booking.status = "Pending"
+
+		if new_booking.user_uid is None:
+			user = await user_service.get_user_by_email(new_booking.email,session)
+			if user:
+				new_booking.user_uid = user.uid
+
 
 		session.add(new_booking)
 
@@ -156,15 +167,86 @@ class BookingService:
 
 
 
-	# async def cancel_booking(self,booking_uid : str, session: AsyncSession):
-	# 	booking_to_delete = await self.get_booking(booking_uid,session)
+	async def get_sum_or_count(session: AsyncSession, column, filter_status=None, past_7_days=None, prev_7_days=None):
+		"""
+		General function to get total sum or count, plus 7-day growth if needed.
 
-	# 	if booking_to_delete is None:
-	# 		return None
+		:param session: Async database session
+		:param column: Column to aggregate (e.g., func.count() or func.sum(Bookings.price))
+		:param filter_status: Optional booking status filter (e.g., "completed")
+		:param past_7_days: Timestamp for last 7 days (optional)
+		:param prev_7_days: Timestamp for prior 7-day period (optional)
+		"""
+		filters = []
+		prev_filters = []
 
-	# 	await session.delete(booking_to_delete)
+		if filter_status:
+			filters.append(Bookings.status == filter_status)
+			prev_filters.append(Bookings.status == filter_status)
 
-	# 	await session.commit()
+		statement = select(column).where(*filters)
+		result = await session.exec(statement)
+		total_value = result.first() or 0 		
+		if past_7_days and prev_7_days:
 
-	# 	return {}
+			statement = select(column).where(Bookings.created_at >= past_7_days, *filters)
+			result = await session.exec(statement)
+			current_value = result.first() or 0	
+
+			statement = select(column).where(
+                Bookings.created_at >= prev_7_days, 
+                Bookings.created_at < past_7_days, 
+                *prev_filters
+            )
+			result = await session.exec(statement)
+			previous_value = result.first() or 0			
+
+			growth = 100 if previous_value == 0 and current_value > 0 else (
+                ((current_value - previous_value) / previous_value) * 100 if previous_value > 0 else 0
+            )
+
+			return {"total_value": round(total_value, 2), "last_7_days": round(current_value, 2), "growth": round(growth, 2)}
+        
+		return {"total_value": round(total_value, 2)}
+
+
+	async def get_new_booking_count(self,now, past_7_days, prev_7_days, session: AsyncSession):
+		return await BookingService.get_sum_or_count(session, func.count(Bookings.uid), past_7_days=past_7_days, prev_7_days=prev_7_days)
+
+
+	async def get_total_revenue(self, now, past_7_days, prev_7_days, session: AsyncSession):
+		return await BookingService.get_sum_or_count(session, func.sum(cast(Bookings.agreedPrice, Numeric)), filter_status="confirmed", past_7_days=past_7_days, prev_7_days=prev_7_days)
+
+
+
+
+
+
+
+
+
+
+
+	# async def get_new_booking_count(self,now,past_7_days,prev_7_days,session: AsyncSession):
+		
+	# 	statement = select(func.count()).where(Bookings.created_at >= past_7_days)
+	# 	result = await session.exec(statement)
+	# 	current_bookings = result.first() or 0
+
+	# 	statement = select(func.count()).where(
+	# 		(Bookings.created_at >= prev_7_days) & (Bookings.created_at < past_7_days)
+	# 	)
+	# 	result = await session.exec(statement)
+	# 	previous_bookings = result.first() or 0
+
+	# 	if previous_bookings == 0:
+	# 		growth = 100 if current_bookings > 0 else 0
+	# 	else:
+	# 		growth = ((current_bookings - previous_bookings) / previous_bookings) * 100
+	# 	return {
+	# 		"new_bookings": current_bookings,
+	# 		"growth": round(growth, 2)
+	# 	}
+	
+
 

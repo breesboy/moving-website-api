@@ -31,7 +31,7 @@ admin_role_checker = RoleChecker(['admin'])
 #         return new_invoice
 
 @invoice_router.post("/create-invoice")
-async def create_invoice(invoice_data: InvoiceRequestModel, session: AsyncSession = Depends(get_session)):
+async def create_invoice(invoice_data: InvoiceRequestModel, session: AsyncSession = Depends(get_session),token_details : dict =Depends(access_token_bearer),_:bool = Depends(admin_role_checker)):
 
     booking_uid = invoice_data.booking_uid
 
@@ -86,6 +86,7 @@ async def create_invoice(invoice_data: InvoiceRequestModel, session: AsyncSessio
 
     booking = await booking_service.get_booking(booking_uid,session)
     await booking_service.quick_update_booking(booking, {"status": "invoiced"}, session)
+    await booking_service.quick_update_booking(booking, {"agreedPrice": str(invoice_data.amount)}, session)
 
     # Save Invoice Details to Database
     await invoice_service.create_invoice(session, booking_uid, stripe_invoice.id, invoice_data)

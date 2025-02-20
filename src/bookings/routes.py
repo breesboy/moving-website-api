@@ -2,6 +2,7 @@ from typing import List
 from fastapi import APIRouter, Depends, status
 from fastapi.exceptions import HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
+from datetime import datetime, timedelta
 
 from src.bookings.schemas import Bookings, UpdateBooking,CreateBooking,UpdateBookingStatus,RescheduleBooking,AddPayment
 from src.db.main import get_session
@@ -21,7 +22,7 @@ admin_role_checker = RoleChecker(['admin'])
 
 
 @booking_router.post("/new_booking", status_code=status.HTTP_201_CREATED, response_model=Bookings)
-async def create_new_booking(booking_data: CreateBooking, session:AsyncSession = Depends(get_session),) -> dict:
+async def create_new_booking(booking_data: CreateBooking, session:AsyncSession = Depends(get_session)) -> dict:
 	new_booking = await booking_service.create_new_booking(booking_data,session)
 
 	email = new_booking.email
@@ -100,15 +101,15 @@ async def update_booking_status(booking_uid:str, booking_status_data: UpdateBook
 		return booking_status
 
 
-@booking_router.patch("/add_payment/{booking_uid}", response_model=Bookings)
-async def add_agreed_price(booking_uid:str, agreed_price_data: AddPayment, session:AsyncSession = Depends(get_session),token_details : dict =Depends(access_token_bearer),_:bool = Depends(admin_role_checker)) -> dict:
-	agreed_price = await booking_service.agreed_price(booking_uid,agreed_price_data,session)
+# @booking_router.patch("/add_payment/{booking_uid}", response_model=Bookings)
+# async def add_agreed_price(booking_uid:str, agreed_price_data: AddPayment, session:AsyncSession = Depends(get_session),token_details : dict =Depends(access_token_bearer),_:bool = Depends(admin_role_checker)) -> dict:
+# 	agreed_price = await booking_service.agreed_price(booking_uid,agreed_price_data,session)
 
-	if agreed_price is None:
-		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Booking not found")
+# 	if agreed_price is None:
+# 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Booking not found")
 
-	else:
-		return agreed_price
+# 	else:
+# 		return agreed_price
 
 
 
@@ -126,14 +127,17 @@ async def cancel_booking(booking_uid:str, session:AsyncSession = Depends(get_ses
 
 
 
-# @booking_router.put("/", status_code=status.HTTP_204_NO_CONTENT)
-# async def shit_bookingsssss(booking_uid:str, session:AsyncSession = Depends(get_session)):
-# 	cancel_booking = await booking_service.cancel_booking(booking_uid,session)
+@booking_router.get("/dashboard/new-bookings")
+async def get_new_bookings(session:AsyncSession = Depends(get_session)):
+	now = datetime.utcnow()
+	past_7_days = now - timedelta(days=7)
+	prev_7_days = past_7_days - timedelta(days=7)
+	return await booking_service.get_new_booking_count(now, past_7_days, prev_7_days, session)
 
-# 	if cancel_booking is None:
-# 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Booking not found")
 
-
-# 	else:
-# 		return {}
-
+@booking_router.get("/dashboard/total-revenue")
+async def get_total_revenue(session: AsyncSession = Depends(get_session)):
+    now = datetime.utcnow()
+    past_7_days = now - timedelta(days=7)
+    prev_7_days = past_7_days - timedelta(days=7)
+    return await booking_service.get_total_revenue(now, past_7_days, prev_7_days, session)

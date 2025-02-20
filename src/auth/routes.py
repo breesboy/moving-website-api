@@ -9,7 +9,7 @@ from fastapi.exceptions import HTTPException
 from typing import List
 from .utils import create_access_token, decode_token, verify_password, create_url_safe_token, decode_url_safe_token,generate_passwd_hash
 from datetime import timedelta,datetime
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from .dependencies import RefreshTokenBearer,AccessTokenBearer, get_current_user,RoleChecker
 from src.db.redis import add_jti_to_blocklist
 from src.mail import mail, create_message
@@ -63,7 +63,7 @@ async def create_user_Account(user_data:UserCreateModel, session: AsyncSession =
 
 	token = create_url_safe_token({"email": email})
 
-	link = f"http://{Config.DOMAIN}/api/v1/auth/verify/{token}"
+	link = f"https://{Config.DOMAIN}/api/v1/auth/verify/{token}"
 
 	message = create_message(
         recipients=[email],
@@ -95,15 +95,21 @@ async def verify_email(token:str, session: AsyncSession = Depends(get_session)):
 		if not user:
 			raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 		
+		if user.is_verified:
+			return RedirectResponse(
+				url="https://blackbrosdelivery.ca/login",
+				status_code=status.HTTP_200_OK
+				)
+		
 		await user_service.update_user(user, {"is_verified": True}, session)
 
 		user_uid = user.uid
 
 		await booking_service.link_booking_to_user(user_uid,user_email, session)
 
-		return JSONResponse(content={
-			"message":"Email verified successfully"},
-			status_code=status.HTTP_200_OK
+		return RedirectResponse(
+			url="https://blackbrosdelivery.ca/login",
+			status_code=status.HTTP_302_FOUND
 			)
 	return JSONResponse(content={
 		"message":"Error occured while verifying email"},
