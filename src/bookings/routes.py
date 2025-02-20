@@ -128,7 +128,7 @@ async def cancel_booking(booking_uid:str, session:AsyncSession = Depends(get_ses
 
 
 @booking_router.get("/dashboard/new-bookings")
-async def get_new_bookings(session:AsyncSession = Depends(get_session)):
+async def get_new_bookings(session:AsyncSession = Depends(get_session),token_details : dict =Depends(access_token_bearer),_:bool = Depends(admin_role_checker)):
 	now = datetime.utcnow()
 	past_7_days = now - timedelta(days=7)
 	prev_7_days = past_7_days - timedelta(days=7)
@@ -136,7 +136,7 @@ async def get_new_bookings(session:AsyncSession = Depends(get_session)):
 
 
 @booking_router.get("/dashboard/total-revenue")
-async def get_total_revenue(session: AsyncSession = Depends(get_session)):
+async def get_total_revenue(session: AsyncSession = Depends(get_session),token_details : dict =Depends(access_token_bearer),_:bool = Depends(admin_role_checker)):
     now = datetime.utcnow()
     past_7_days = now - timedelta(days=7)
     prev_7_days = past_7_days - timedelta(days=7)
