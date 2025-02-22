@@ -114,16 +114,21 @@ async def stripe_webhook(request: Request, session: AsyncSession = Depends(get_s
     except stripe.error.SignatureVerificationError:
         raise HTTPException(status_code=400, detail="Invalid signature")
 
+    invoice_data = event["data"]["object"]
+    invoice_id = invoice_data["id"]
+    
+    # Find invoice in DB
+    invoice = await invoice_service.get_invoice_by_id(invoice_id,session)
+    
+    booking_uid = invoice.booking_uid
+    booking = await booking_service.get_booking(booking_uid,session)
+    
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found in database")
+
+    
     # Handle "invoice.paid" event
     if event["type"] == "invoice.paid":
-        invoice_data = event["data"]["object"]
-        invoice_id = invoice_data["id"]
-        
-        # Find invoice in DB
-        invoice = await invoice_service.get_invoice_by_id(invoice_id,session)
-        if not invoice:
-            raise HTTPException(status_code=404, detail="Invoice not found in database")
-
         # Update invoice status
         paid_at_timestamp = invoice_data["status_transitions"]["paid_at"]
         paid_datetime = datetime.utcfromtimestamp(paid_at_timestamp)        
@@ -132,8 +137,21 @@ async def stripe_webhook(request: Request, session: AsyncSession = Depends(get_s
         await invoice_service.update_invoice(invoice, {"paid_at": paid_datetime}, session)
 
         # Update booking status to "confirmed"
-        booking_uid = invoice.booking_uid
-        booking = await booking_service.get_booking(booking_uid,session)
         await booking_service.quick_update_booking(booking, {"status": "confirmed"}, session)
-        
+
+    # Handle "invoice.updated" when status changes to "past_due"
+    elif event["type"] == "invoice.updated":
+        new_status = invoice_data["status"]  # Check latest status
+
+        if new_status == "past_due":
+            invoice.status = "past_due"
+            await invoice_service.update_invoice(invoice, {"status": invoice_status}, session)
+
+            await booking_service.quick_update_booking(booking, {"status": invoice_status}, session)
+
+            # Notify admin & client
+            # send_email(booking.client_email, "Your invoice is past due! Please make payment immediately.")
+            # send_email(admin_email, "A client has an overdue invoice.")
+
+
     return {"status": "success"}

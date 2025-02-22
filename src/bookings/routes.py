@@ -4,10 +4,11 @@ from fastapi.exceptions import HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 from datetime import datetime, timedelta
 
+from src.auth.models import User
 from src.bookings.schemas import Bookings, UpdateBooking,CreateBooking,UpdateBookingStatus,RescheduleBooking,AddPayment
 from src.db.main import get_session
 from .service import BookingService
-from src.auth.dependencies import AccessTokenBearer, RoleChecker
+from src.auth.dependencies import AccessTokenBearer, RoleChecker, get_current_user
 from src.mail import mail, create_message
 
 
@@ -141,3 +142,32 @@ async def get_total_revenue(session: AsyncSession = Depends(get_session),token_d
     past_7_days = now - timedelta(days=7)
     prev_7_days = past_7_days - timedelta(days=7)
     return await booking_service.get_total_revenue(now, past_7_days, prev_7_days, session)
+
+
+@booking_router.get("/dashboard/pending-bookings")
+async def get_total_pending_bookings(session: AsyncSession = Depends(get_session),token_details : dict =Depends(access_token_bearer),_:bool = Depends(admin_role_checker)):
+    now = datetime.utcnow()
+    past_7_days = now - timedelta(days=7)
+    prev_7_days = past_7_days - timedelta(days=7)
+    return await booking_service.get_total_pending_bookings_count(now, past_7_days, prev_7_days, session)
+
+
+@booking_router.get("/dashboard/booking-statistics") 
+async def get_admin_booking_statistics(session: AsyncSession = Depends(get_session))-> dict:
+    return await booking_service.get_monthly_booking_counts(session)
+
+
+@booking_router.get("/dashboard/revenue-statistics")
+async def get_admin_revenue_statistics(session: AsyncSession = Depends(get_session)):
+    return await booking_service.get_monthly_revenue(session)
+
+
+@booking_router.get("/dashboard/customer-bookings")
+async def get_customer_booking_statistics(
+    user: User = Depends(get_current_user),  # Get logged-in customer
+    session: AsyncSession = Depends(get_session)
+):
+    return await booking_service.get_customer_bookings(user.uid, session)
+
+
+

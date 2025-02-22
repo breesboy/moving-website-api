@@ -2,9 +2,9 @@ from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
 from .schemas import CreateBooking,UpdateBooking,RescheduleBooking,UpdateBookingStatus,AddPayment
 from sqlmodel import select,desc
-from sqlalchemy import func,cast,Numeric
+from sqlalchemy import func,cast,Numeric,extract
 from .models import Bookings
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from src.auth.services import UserService
 
@@ -205,7 +205,7 @@ class BookingService:
                 ((current_value - previous_value) / previous_value) * 100 if previous_value > 0 else 0
             )
 
-			return {"total_value": round(total_value, 2), "last_7_days": round(current_value, 2), "growth": round(growth, 2)}
+			return {"total_value": round(total_value, 2),"previous_7_days": round(previous_value,2), "last_7_days": round(current_value, 2), "growth": round(growth, 2)}
         
 		return {"total_value": round(total_value, 2)}
 
@@ -216,11 +216,92 @@ class BookingService:
 
 	async def get_total_revenue(self, now, past_7_days, prev_7_days, session: AsyncSession):
 		return await BookingService.get_sum_or_count(session, func.sum(cast(Bookings.agreedPrice, Numeric)), filter_status="confirmed", past_7_days=past_7_days, prev_7_days=prev_7_days)
+	
+	
+	async def get_total_pending_bookings_count(self, now, past_7_days, prev_7_days, session: AsyncSession):
+		return await BookingService.get_sum_or_count(session, func.count(Bookings.uid), filter_status="invoiced", past_7_days=past_7_days, prev_7_days=prev_7_days)
 
 
 
+	async def get_monthly_booking_counts(self,session: AsyncSession):
+
+		current_year = datetime.utcnow().year
+
+		statement = (
+			select(
+				extract('month', Bookings.created_at).label('month'),
+				func.count().label('count')
+			)
+			.where(func.extract('year', Bookings.created_at) == current_year)
+			.group_by('month')
+			.order_by('month')
+		)
+
+		result = await session.exec(statement)
+		data = result.all()
+
+		bookings_per_month = {int(row.month): row.count for row in data}
+
+		monthly_stats = [{"month": month, "count": bookings_per_month.get(month, 0)} for month in range(1, 13)]
+
+		return {"data": monthly_stats}
 
 
+
+	async def get_monthly_revenue(self,session: AsyncSession):
+		""" Fetches the total revenue for each month of the current year """
+		current_year = datetime.utcnow().year
+
+		statement = (
+			select(
+				extract('month', Bookings.created_at).label('month'),
+				func.sum(cast(Bookings.agreedPrice, Numeric)).label('revenue')
+			)
+			.where(
+				func.extract('year', Bookings.created_at) == current_year,
+				Bookings.status == "confirmed"  # Only consider completed bookings
+			)
+			.group_by('month')
+			.order_by('month')
+		)
+
+		result = await session.exec(statement)
+		data = result.all()
+
+		revenue_per_month = {int(row.month): row.revenue for row in data}
+
+		monthly_revenue_stats = [{"month": month, "revenue": revenue_per_month.get(month, 0)} for month in range(1, 13)]
+
+		return {"data": monthly_revenue_stats}
+
+
+	async def get_customer_bookings(self,customer_id: int, session: AsyncSession):
+		""" Fetches the number of bookings for each month for a specific customer """
+		current_year = datetime.utcnow().year
+
+		statement = (
+			select(
+				extract('month', Bookings.created_at).label('month'),
+				func.count().label('total_bookings')
+			)
+			.where(
+				func.extract('year', Bookings.created_at) == current_year,
+				Bookings.user_uid == customer_id  # Filter bookings by customer ID
+			)
+			.group_by('month')
+			.order_by('month')
+		)
+
+		result = await session.execute(statement)
+		data = result.all()
+
+		# Convert to dictionary format {1: count, 2: count, ..., 12: count}
+		bookings_per_month = {int(row.month): row.total_bookings for row in data}
+
+		# Ensure all 12 months are represented
+		customer_booking_stats = [{"month": month, "bookings": bookings_per_month.get(month, 0)} for month in range(1, 13)]
+
+		return {"data": customer_booking_stats}
 
 
 
