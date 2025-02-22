@@ -153,12 +153,12 @@ async def get_total_pending_bookings(session: AsyncSession = Depends(get_session
 
 
 @booking_router.get("/dashboard/booking-statistics") 
-async def get_admin_booking_statistics(session: AsyncSession = Depends(get_session))-> dict:
+async def get_admin_booking_statistics(session: AsyncSession = Depends(get_session),token_details : dict =Depends(access_token_bearer),_:bool = Depends(admin_role_checker))-> dict:
     return await booking_service.get_monthly_booking_counts(session)
 
 
 @booking_router.get("/dashboard/revenue-statistics")
-async def get_admin_revenue_statistics(session: AsyncSession = Depends(get_session)):
+async def get_admin_revenue_statistics(session: AsyncSession = Depends(get_session),token_details : dict =Depends(access_token_bearer),_:bool = Depends(admin_role_checker)):
     return await booking_service.get_monthly_revenue(session)
 
 
