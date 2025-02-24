@@ -292,7 +292,7 @@ class BookingService:
 			.order_by('month')
 		)
 
-		result = await session.execute(statement)
+		result = await session.exec(statement)
 		data = result.all()
 
 		# Convert to dictionary format {1: count, 2: count, ..., 12: count}
@@ -304,9 +304,30 @@ class BookingService:
 		return {"data": customer_booking_stats}
 
 
+	async def get_new_customers(self,first_day: int, session: AsyncSession):
+		# Query unique customers who made bookings this month
+		statement = select(Bookings.email).where(Bookings.created_at >= first_day).distinct()
+		results = await session.exec(statement)
+		results = results.all()
+		
+		return {"new_customers": len(results)}
 
 
+	async def get_avg_daily_bookings(self, first_day:datetime , days_so_far:int, session:AsyncSession):
+	# Count total bookings in the current month
+		stmt = select(func.count()).where(Bookings.created_at >= first_day)
+		result = await session.exec(stmt)
+		total_bookings = result.first()  # Handle case where no bookings exist
 
+
+		total_bookings = total_bookings if total_bookings else 0
+
+		avg_daily_bookings = total_bookings / days_so_far if days_so_far > 0 else 0
+
+		return {"avg_daily_bookings": round(avg_daily_bookings, 2)
+		  		# "total":total_bookings,
+				# "days":days_so_far
+		  }
 
 	# async def get_new_booking_count(self,now,past_7_days,prev_7_days,session: AsyncSession):
 		
