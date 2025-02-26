@@ -34,7 +34,7 @@ async def create_new_booking(booking_data: CreateBooking, session:AsyncSession =
         recipients=[email],
         subject="Booking Confirmation",
         template_name="verify-email.html",
-        context={"names": names, "booking-id": booking_uid, "link" : link},
+        context={"names": names, "booking_uid": booking_uid, "link" : link},
     )
 	await mail.send_message(message, template_name="booking-email.html")
 
