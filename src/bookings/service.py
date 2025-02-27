@@ -61,6 +61,9 @@ class BookingService:
 
 		result = await session.exec(statement)
 
+		if result is None:
+			return None
+
 		return result.first()
 
 
@@ -126,17 +129,13 @@ class BookingService:
 
 
 
-	async def cancel_booking(self, booking_uid : str, session: AsyncSession):
+	async def cancel_booking(self, booking_uid : str, status:str, session: AsyncSession):
+
 		booking_to_cancel = await self.get_booking(booking_uid,session)
-
-
-		if booking_to_cancel is None:
-			return None
-
 
 		booking_cancel_dict = booking_to_cancel.model_dump()
 
-		booking_cancel_dict['status'] = "cancelled"
+		booking_cancel_dict['status'] = status
 		await session.commit()
 
 		return booking_cancel_dict
@@ -163,6 +162,15 @@ class BookingService:
 
 			await session.commit()
 		return bookings
+
+
+	async def delete_booking(self, booking_uid: str, session: AsyncSession):
+		booking_to_delete = await self.get_booking(booking_uid, session)
+		
+		await session.delete(booking_to_delete)
+		await session.commit()
+		
+		return booking_to_delete
 
 
 
@@ -329,26 +337,6 @@ class BookingService:
 				# "days":days_so_far
 		  }
 
-	# async def get_new_booking_count(self,now,past_7_days,prev_7_days,session: AsyncSession):
-		
-	# 	statement = select(func.count()).where(Bookings.created_at >= past_7_days)
-	# 	result = await session.exec(statement)
-	# 	current_bookings = result.first() or 0
-
-	# 	statement = select(func.count()).where(
-	# 		(Bookings.created_at >= prev_7_days) & (Bookings.created_at < past_7_days)
-	# 	)
-	# 	result = await session.exec(statement)
-	# 	previous_bookings = result.first() or 0
-
-	# 	if previous_bookings == 0:
-	# 		growth = 100 if current_bookings > 0 else 0
-	# 	else:
-	# 		growth = ((current_bookings - previous_bookings) / previous_bookings) * 100
-	# 	return {
-	# 		"new_bookings": current_bookings,
-	# 		"growth": round(growth, 2)
-	# 	}
 	
 
 

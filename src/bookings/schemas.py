@@ -47,9 +47,10 @@ class UpdateBooking(BaseModel):
 	pickup_address : Optional[str] = None
 	dropoff_address : Optional[str] = None
 	location : Optional[str] = None
-	moving_date: date
+	moving_date: datetime
 	description : str
 	service : str
+	sub_services: Optional[List[str]] = None
 
 
 class RescheduleBooking(BaseModel):

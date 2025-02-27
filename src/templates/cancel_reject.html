@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Email Confirmation</title>
+    <style>
+      /* General Reset */
+      body {
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+        font-family: "Arial", sans-serif;
+      }
+
+      /* Email Wrapper */
+      .email-container {
+        max-width: 600px;
+        margin: 50px auto;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        overflow: hidden;
+        border: 1px solid #e0e0e0;
+      }
+
+      /* Header Styling */
+      .header {
+        background-color: #0056b3;
+        padding: 40px;
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
+      }
+
+      .header img {
+        width: 90px;
+      }
+
+      /* Content Styling */
+      .content {
+        padding: 35px;
+        color: #333;
+      }
+
+      .content h1 {
+        font-size: 24px;
+        margin-bottom: 15px;
+        font-weight: bold;
+        color: #222;
+      }
+
+      .content p {
+        font-size: 16px;
+        color: #555;
+        line-height: 1.6;
+      }
+
+      /* CTA Button */
+      .cta-button {
+        display: inline-block;
+        background: #ff9800;
+        color: #ffffff;
+        padding: 16px 32px;
+        font-size: 18px;
+        font-weight: bold;
+        text-decoration: none;
+        border-radius: 10px;
+        margin: 25px 0;
+        box-shadow: 0 4px 10px rgba(255, 152, 0, 0.4);
+        transition: all 0.3s ease-in-out;
+      }
+
+      .cta-button:hover {
+        background: #ff7300;
+        box-shadow: 0 6px 14px rgba(255, 152, 0, 0.6);
+      }
+
+      /* Footer Styling */
+      .footer {
+        padding: 20px;
+        font-size: 14px;
+        color: #666;
+        background-color: #f9f9f9;
+        border-bottom-left-radius: 12px;
+        border-bottom-right-radius: 12px;
+        border-top: 1px solid #e0e0e0;
+      }
+
+      /* Social Icons */
+      .social-icons {
+        margin: 15px 0;
+      }
+
+      .social-icons a {
+        display: inline-block;
+        margin: 0 12px;
+        transition: transform 0.3s ease-in-out;
+      }
+
+      .social-icons img {
+        width: 40px;
+      }
+
+      .social-icons a:hover {
+        transform: scale(1.1);
+      }
+
+      /* Dark Mode Gmail Fix */
+      @media (prefers-color-scheme: dark) {
+        body,
+        .email-container {
+          background: #ffffff !important;
+        }
+        .footer {
+          background: #f9f9f9 !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="email-container">
+      <div class="header">
+        <img
+          src="https://img.icons8.com/ios-filled/100/ffffff/email-open.png"
+          alt="Email Icon"
+        />
+      </div>
+
+      <div class="content">
+        <h1>Booking Status Notice</h1>
+        <p>
+          Hello {{ names }}, we regret to inform you that your booking with
+          Blackbros Delivery (reference number:
+          <strong>{{ booking_uid }}</strong>) has been {{ status }}.
+        </p>
+        <p>
+          If you believe this was done in error or have any questions, please
+          don't hesitate to contact our customer support team.
+        </p>
+
+        <a href="{{ link }}" class="cta-button">View Booking Details</a>
+      </div>
+
+      <div class="footer">
+        <p>Stay Connected</p>
+        <div class="social-icons">
+          <a href="#"
+            ><img
+              src="https://img.icons8.com/ios-filled/50/4A90E2/twitter.png"
+              alt="Twitter"
+          /></a>
+          <a href="#"
+            ><img
+              src="https://img.icons8.com/ios-filled/50/4A90E2/facebook.png"
+              alt="Facebook"
+          /></a>
+          <a href="#"
+            ><img
+              src="https://img.icons8.com/ios-filled/50/4A90E2/email.png"
+              alt="Email"
+          /></a>
+        </div>
+        <p>
+          Email sent by Blackbros Delivery<br />
+          Copyright © 2025 Blackbros Delivery. All rights reserved.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

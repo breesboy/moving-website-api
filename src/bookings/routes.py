@@ -115,18 +115,73 @@ async def update_booking_status(booking_uid:str, booking_status_data: UpdateBook
 
 
 
-@booking_router.patch("/cancel_booking/{booking_uid}", response_model=Bookings)
-async def cancel_booking(booking_uid:str, session:AsyncSession = Depends(get_session),token_details : dict =Depends(access_token_bearer),_:bool = Depends(user_role_checker)) -> dict:
-	cancel_booking = await booking_service.cancel_booking(booking_uid,session)
+@booking_router.patch("/cancel_booking/{booking_uid}")
+async def cancel_or_reject_booking(booking_uid:str, user: User = Depends(get_current_user), session:AsyncSession = Depends(get_session),token_details : dict =Depends(access_token_bearer),_:bool = Depends(user_role_checker)) -> dict:
+	
+	role = user.role
+	user_uid = user.uid
 
-	if cancel_booking is None:
+	booking = await booking_service.get_booking(booking_uid,session)
+
+	if booking is None:
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Booking not found")
 
-	else:
+	if role == "admin" and booking.status == "Pending":
+		reject_booking = await booking_service.cancel_booking(booking_uid,"rejected",session)
+
+		email = booking.email
+		names = booking.firstName + " " + booking.lastName
+		booking_uid = booking.uid
+		link = ""
+		message = create_message(
+			recipients=[email],
+			subject="Booking rejected",
+			template_name="cancel_reject.html",
+			context={"names": names, "booking_uid": booking_uid,"status":"rejected", "link" : link},
+		)
+		await mail.send_message(message, template_name="cancel_reject.html")
+
+		return reject_booking
+
+	elif user_uid == booking.user_uid and booking.status == "Pending":
+		cancel_booking = await booking_service.cancel_booking(booking_uid,"cancelled",session)
+
+		email = booking.email
+		names = booking.firstName + " " + booking.lastName
+		booking_uid = booking.uid
+		link = ""
+		message = create_message(
+			recipients=[email],
+			subject="Booking cancelled",
+			template_name="cancel_reject.html",
+			context={"names": names, "booking_uid": booking_uid,"status":"cancelled", "link" : link},
+		)
+		await mail.send_message(message, template_name="cancel_reject.html")
+				
 		return cancel_booking
+		
 
+	raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Booking is already comfirmed")
 
+@booking_router.patch("/delete_booking/{booking_uid}")
+async def delete_booking(booking_uid:str, user: User = Depends(get_current_user), session:AsyncSession = Depends(get_session),token_details : dict =Depends(access_token_bearer),_:bool = Depends(user_role_checker)) -> dict:
+	
+	user_uid = user.uid
 
+	booking = await booking_service.get_booking(booking_uid,session)
+
+	if booking is None:
+		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Booking not found")
+
+	if user_uid == booking.user_uid and booking.status == "Pending":
+		await booking_service.delete_booking(booking_uid,session)
+
+		return {"message": "Booking deleted"}
+	
+	else:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail= "Booking is under review.")
+
+		
 
 @booking_router.get("/dashboard/new-bookings")
 async def get_new_bookings(session:AsyncSession = Depends(get_session),token_details : dict =Depends(access_token_bearer),_:bool = Depends(admin_role_checker)):
@@ -164,7 +219,7 @@ async def get_admin_revenue_statistics(session: AsyncSession = Depends(get_sessi
 
 @booking_router.get("/dashboard/customer-bookings")
 async def get_customer_booking_statistics(
-    user: User = Depends(get_current_user),  # Get logged-in customer
+    user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
     return await booking_service.get_customer_bookings(user.uid, session)
