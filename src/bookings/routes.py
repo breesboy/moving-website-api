@@ -163,7 +163,7 @@ async def cancel_or_reject_booking(booking_uid:str, user: User = Depends(get_cur
 
 	raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Booking is already comfirmed")
 
-@booking_router.patch("/delete_booking/{booking_uid}")
+@booking_router.delete("/delete_booking/{booking_uid}")
 async def delete_booking(booking_uid:str, user: User = Depends(get_current_user), session:AsyncSession = Depends(get_session),token_details : dict =Depends(access_token_bearer),_:bool = Depends(user_role_checker)) -> dict:
 	
 	user_uid = user.uid
