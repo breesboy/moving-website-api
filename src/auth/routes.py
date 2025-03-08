@@ -33,11 +33,11 @@ REFRESH_TOKEN_EXPIRY = 2
 # 	message = create_message(
 #         recipients=emails,
 #         subject="Verify Your Email",
-#         template_name="email.html",
+#         template_name="booking-email.html",
 #         context={"name": "test", "verification_link": "google.com"},
 #     )
 
-# 	await mail.send_message(message, template_name="email.html")
+# 	await mail.send_message(message, template_name="booking-email.html")
 
 # 	return {"message":"Email sent successfully"}
 
@@ -257,3 +257,56 @@ async def password_reset_confirm(token:str, password:PasswordResetConfirmModel, 
 		"message":"Error occured during password reset"},
 		status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
 		)
+
+
+
+
+
+
+
+
+
+
+
+from fastapi import FastAPI, Depends
+from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
+from pydantic import BaseModel, EmailStr
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+app = FastAPI()
+
+# Configure FastAPI-Mail
+conf = ConnectionConfig(
+    MAIL_USERNAME="noreply@blackbrosdelivery.ca",
+    MAIL_PASSWORD="",  # Leave empty if using SMTP relay
+    MAIL_FROM="noreply@blackbrosdelivery.ca",
+    MAIL_PORT=587,
+    MAIL_SERVER="smtp-relay.gmail.com",  # Google SMTP relay server
+    MAIL_STARTTLS=True,
+    MAIL_SSL_TLS=False,
+    USE_CREDENTIALS=False  # Since IP-based authentication is used
+)
+
+# Define Email Request Model
+class EmailSchema(BaseModel):
+    email: EmailStr
+    subject: str
+    message: str
+
+# Endpoint to Send Email
+@auth_router.post("/send-email/")
+async def send_email(email_data: EmailSchema):
+    message = MessageSchema(
+        subject=email_data.subject,
+        recipients=[email_data.email],
+        body=email_data.message,
+        subtype="html"
+    )
+
+    fm = FastMail(conf)
+    await fm.send_message(message)
+    return {"message": "Email sent successfully"}
