@@ -217,7 +217,7 @@ async def password_reset_request(email:PasswordResetRequestModel):
 	email = email.email
 	token = create_url_safe_token({"email": email})
 
-	link = f"http://{Config.DOMAIN}/api/v1/auth/password-reset-confirm/{token}"
+	link = f"https://blackbrosdelivery.ca/password-reset-confirm/{token}"
 
 	message = create_message(
         recipients=[email],

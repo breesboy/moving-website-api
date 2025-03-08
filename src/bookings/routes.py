@@ -227,7 +227,7 @@ async def get_customer_booking_statistics(
 
 @booking_router.get("/dashboard/new-customers")
 async def get_new_customers(session: AsyncSession = Depends(get_session),token_details : dict =Depends(access_token_bearer),_:bool = Depends(admin_role_checker)):
-    # Get the first and last day of the current month
+    
 	today = datetime.today()
 	first_day = today.replace(day=1)
 
@@ -238,6 +238,6 @@ async def get_new_customers(session: AsyncSession = Depends(get_session),token_d
 async def get_avg_daily_bookings(session: AsyncSession = Depends(get_session),token_details : dict =Depends(access_token_bearer),_:bool = Depends(admin_role_checker)):
 	today = datetime.today()
 	first_day = today.replace(day=1)
-	days_so_far = today.day  # Number of days passed in the current month
+	days_so_far = today.day  
 
 	return await booking_service.get_avg_daily_bookings(first_day,days_so_far,session)
